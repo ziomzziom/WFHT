@@ -1,4 +1,3 @@
-# WFHT-Interactive-Installer.ps1
 # Windows Forensic & Hacking Toolkit - Interactive Installer
 
 param(
@@ -132,7 +131,7 @@ try {
         
         switch ($choice) {
             '1' { # Forensic Tools
-                $sub = $menuStructure["🔍 Forensic Tools"]
+                $sub = $menuStructure["Forensic Tools"]
                 Show-SubMenu -Category "Forensic Tools" -SubCategories $sub
                 $subChoice = Read-Host "`tSelect tools (comma-separated)"
                 $selected = $subChoice.Split(',') | ForEach-Object { $_.Trim() }
@@ -140,7 +139,7 @@ try {
                 Install-Tools -Tools $tools -Category "Forensic Tools"
             }
             '2' { # Hacking Tools
-                $sub = $menuStructure["⚔️ Hacking Tools"]
+                $sub = $menuStructure["Hacking Tools"]
                 Show-SubMenu -Category "Hacking Tools" -SubCategories $sub
                 $subChoice = Read-Host "`tSelect tools (comma-separated)"
                 $selected = $subChoice.Split(',') | ForEach-Object { $_.Trim() }
@@ -148,7 +147,7 @@ try {
                 Install-Tools -Tools $tools -Category "Hacking Tools"
             }
             '3' { # System Tools
-                $sub = $menuStructure["⚙️ System Tools"]
+                $sub = $menuStructure["System Tools"]
                 Show-SubMenu -Category "System Tools" -SubCategories $sub
                 $subChoice = Read-Host "`tSelect tools (comma-separated)"
                 $selected = $subChoice.Split(',') | ForEach-Object { $_.Trim() }
