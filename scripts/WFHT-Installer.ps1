@@ -59,14 +59,17 @@ function Show-SubMenu {
     )
     Clear-Host
     Write-Host "`n=== $Category ===" -ForegroundColor Yellow
-    $sizeIndex = $SubCategories["Size"].Count
-    for ($i = 0; $i -lt ($SubCategories.Count - 1); $i++) {
-        $key = $SubCategories.Keys[$i]
-        if ($key -ne "Size") {
-            $size = "{0:N1}GB" -f ($SubCategories["Size"][$i]/1GB)
-            Write-Host "[$($i+1)] $key (${size})"
-        }
+    
+    # Get all subcategory keys except "Size"
+    $keys = $SubCategories.Keys | Where-Object { $_ -ne "Size" }
+    
+    # Display each subcategory with its size
+    for ($i = 0; $i -lt $keys.Count; $i++) {
+        $key = $keys[$i]
+        $size = "{0:N1}GB" -f ($SubCategories["Size"][$i]/1GB)
+        Write-Host "[$($i+1)] $key (${size})"
     }
+    
     Write-Host "[0] Back to Main Menu`n"
 }
 
@@ -76,10 +79,11 @@ function Get-SelectedTools {
         [array]$SelectedIndices
     )
     $selected = @()
-    $sizeIndex = $SubCategories["Size"].Count
-    for ($i = 0; $i -lt ($SubCategories.Count - 1); $i++) {
-        $key = $SubCategories.Keys[$i]
-        if ($key -ne "Size" -and ($i+1) -in $SelectedIndices) {
+    $keys = $SubCategories.Keys | Where-Object { $_ -ne "Size" }
+    
+    foreach ($index in $SelectedIndices) {
+        if ($index -gt 0 -and $index -le $keys.Count) {
+            $key = $keys[$index - 1]
             $selected += $SubCategories[$key]
         }
     }
