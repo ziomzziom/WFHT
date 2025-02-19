@@ -1,96 +1,187 @@
-# WFHT-AutoInstaller.ps1
-# Automated tool installer with fallback methods
+# Windows Forensic & Hacking Toolkit - Interactive Installer
 
-param([switch]$ListOnly)
-
-# Tool Configuration Matrix
-$tools = @(
-    # Forensic Tools
-    @{Name="autopsy"; Category="Forensic"; Choco="autopsy-linux"; GitHub="sleuthkit/autopsy"; Args="--pre"},
-    @{Name="ftkimager"; Category="Forensic"; DirectURL="https://d1kpmuwb7gvu1i.cloudfront.net/FTK_Imager_Latest.exe"},
-    @{Name="volatility3"; Category="Forensic"; Pip="volatility3"},
-
-    # Hacking Tools
-    @{Name="metasploit"; Category="Hacking"; Choco="metasploit"},
-    @{Name="bloodhound"; Category="Hacking"; GitHub="BloodHoundAD/BloodHound"; Npm="bloodhound"},
-    @{Name="powersploit"; Category="Hacking"; GitHub="PowerShellMafia/PowerSploit"},
-
-    # System Tools
-    @{Name="sysinternals"; Category="System"; Choco="sysinternals"},
-    @{Name="python3"; Category="System"; Choco="python"},
-    @{Name="git"; Category="System"; Choco="git"}
+param(
+    [switch]$EstimateOnly
 )
 
-# Region: Installation Methods
-function Install-Choco {
-    param($tool)
-    try {
-        choco install $tool.Choco -y --no-progress
-        return $true
-    } catch { return $false }
-}
-
-function Install-GitHub {
-    param($tool)
-    $repo = $tool.GitHub
-    $url = "https://github.com/$repo/archive/master.zip"
-    try {
-        $temp = [System.IO.Path]::GetTempFileName()
-        Invoke-WebRequest $url -OutFile $temp
-        Expand-Archive $temp -DestinationPath "$env:ProgramFiles\$($tool.Name)"
-        return $true
-    } catch { return $false }
-}
-
-function Install-Direct {
-    param($tool)
-    try {
-        $installer = "$env:TEMP\$($tool.Name).exe"
-        Invoke-WebRequest $tool.DirectURL -OutFile $installer
-        Start-Process $installer -ArgumentList $tool.Args -Wait
-        return $true
-    } catch { return $false }
-}
-
-function Install-Pip {
-    param($tool)
-    try {
-        python -m pip install $tool.Pip
-        return $true
-    } catch { return $false }
-}
-
-function Install-Npm {
-    param($tool)
-    try {
-        npm install -g $tool.Npm
-        return $true
-    } catch { return $false }
-}
-# EndRegion
-
-# Main Installation Logic
-foreach ($tool in $tools) {
-    $result = $false
-    $methods = @("Choco", "GitHub", "DirectURL", "Pip", "Npm")
+#region Configuration
+$menuStructure = @{
+    "Forensic Tools" = @{
+        "1. Disk Analysis"       = @("autopsy", "ftkimager", "ericzimmertools")
+        "2. Memory Analysis"     = @("volatility3", "belkasoft-ram-capturer")
+        "3. Network Forensics"   = @("wireshark", "networkminer", "tshark")
+        "4. Mobile Forensics"    = @("adb", "santoku") 
+        "5. Log Analysis"        = @("logparser", "plaso")
+        "Size"                   = @(4.5GB, 1.5GB, 1GB, 2.5GB, 600MB)
+    }
     
-    foreach ($method in $methods) {
-        if ($tool.ContainsKey($method)) {
-            switch ($method) {
-                "Choco"   { $result = Install-Choco $tool }
-                "GitHub"  { $result = Install-GitHub $tool }
-                "DirectURL" { $result = Install-Direct $tool }
-                "Pip"     { $result = Install-Pip $tool }
-                "Npm"     { $result = Install-Npm $tool }
-            }
-            if ($result) { break }
+    "Hacking Tools" = @{
+        "1. Reconnaissance"      = @("nmap", "maltego", "theharvester")
+        "2. Exploitation"        = @("metasploit-framework", "sqlmap")
+        "3. Post-Exploitation"   = @("chocolatey", "chocolatey")  # Placeholder for manual tools
+        "4. Password Cracking"   = @("hashcat", "john", "hydra")
+        "5. Web App Testing"     = @("burp-suite", "owasp-zap")
+        "Size"                   = @(1.9GB, 5GB, 0GB, 2.8GB, 4GB)
+    }
+    
+    "System Tools" = @{
+        "1. Core Utilities"      = @("sysinternals", "7zip", "nirlauncher")
+        "2. Development"         = @("python3", "vscode", "ghidra")
+        "3. Virtualization"      = @("vmware-workstation-player", "virtualbox", "wsl2")
+        "Size"                   = @(500MB, 3.8GB, 8GB)
+    }
+}
+
+$requiredFeatures = @(
+    "Microsoft-Hyper-V",
+    "Microsoft-Windows-Subsystem-Linux",
+    "Containers"
+)
+#endregion
+
+#region Functions
+function Show-MainMenu {
+    Clear-Host
+    Write-Host "`nWindows Forensic & Hacking Toolkit Installer`n" -ForegroundColor Magenta
+    Write-Host "=== Main Menu ==="
+    Write-Host "[1] Install Forensic Tools"
+    Write-Host "[2] Install Hacking Tools"
+    Write-Host "[3] Install System Tools"
+    Write-Host "[4] Install ALL Tools"
+    Write-Host "[5] Estimate Space Requirements"
+    Write-Host "[0] Exit`n"
+}
+
+function Show-SubMenu {
+    param(
+        [string]$Category,
+        [hashtable]$SubCategories
+    )
+    Clear-Host
+    Write-Host "`n=== $Category ===" -ForegroundColor Yellow
+    
+    # Get all subcategory keys except "Size"
+    $keys = $SubCategories.Keys | Where-Object { $_ -ne "Size" }
+    
+    # Display each subcategory with its size
+    for ($i = 0; $i -lt $keys.Count; $i++) {
+        $key = $keys[$i]
+        $size = "{0:N1}GB" -f ($SubCategories["Size"][$i]/1GB)
+        Write-Host "[$($i+1)] $key (${size})"
+    }
+    
+    Write-Host "[A] Install ALL $Category Tools"
+    Write-Host "[0] Back to Main Menu`n"
+}
+
+function Get-SelectedTools {
+    param(
+        [hashtable]$SubCategories,
+        [array]$SelectedIndices
+    )
+    $selected = @()
+    $keys = $SubCategories.Keys | Where-Object { $_ -ne "Size" }
+    
+    foreach ($index in $SelectedIndices) {
+        if ($index -gt 0 -and $index -le $keys.Count) {
+            $key = $keys[$index - 1]
+            $selected += $SubCategories[$key]
         }
     }
+    $selected
+}
 
-    [PSCustomObject]@{
-        Tool = $tool.Name
-        Category = $tool.Category
-        Installed = $result
-        Method = $method
+function Install-Tools {
+    param(
+        [array]$Tools,
+        [string]$Category
+    )
+    Write-Host "`nInstalling $Category..." -ForegroundColor Cyan
+    foreach ($tool in $Tools) {
+        if ($tool -eq "chocolatey") {
+            # Skip placeholder tools
+            continue
+        }
+        Write-Host "  - Installing $tool" -ForegroundColor DarkGray
+        try {
+            choco install $tool -y --no-progress
+        }
+        catch {
+            Write-Host "    [!] Failed to install $tool" -ForegroundColor Red
+        }
+    }
+    
+    # Handle manual tools
+    if ($Category -eq "Post-Exploitation") {
+        Install-ManualTools -Category $Category
     }
 }
+
+function Install-ManualTools {
+    param(
+        [string]$Category
+    )
+    Write-Host "`nManual Installation Required for $Category Tools:" -ForegroundColor Yellow
+    Write-Host "-----------------------------------------------"
+    
+    switch ($Category) {
+        "Post-Exploitation" {
+            Write-Host "1. Mimikatz: Download from https://github.com/gentilkiwi/mimikatz"
+            Write-Host "2. BloodHound: Download from https://github.com/BloodHoundAD/BloodHound"
+            Write-Host "3. PowerSploit: Download from https://github.com/PowerShellMafia/PowerSploit"
+        }
+    }
+    
+    Write-Host "`nFollow the instructions in the respective repositories to install these tools.`n"
+}
+
+function Enable-WindowsFeatures {
+    Write-Host "`nEnabling System Features..." -ForegroundColor Yellow
+    foreach ($feature in $requiredFeatures) {
+        try {
+            Enable-WindowsOptionalFeature -Online -FeatureName $feature -All -NoRestart
+        }
+        catch {
+            Write-Host "  [!] Failed to enable $feature" -ForegroundColor Red
+        }
+    }
+}
+#endregion
+
+# Main Execution
+try {
+    # Check for Chocolatey
+    if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
+        Write-Host "Installing Chocolatey..." -ForegroundColor Yellow
+        Set-ExecutionPolicy Bypass -Scope Process -Force
+        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+        iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+    }
+
+    # Main Loop
+    $exit = $false
+    while (-not $exit) {
+        Show-MainMenu
+        $choice = Read-Host "Enter your choice"
+        
+        switch ($choice) {
+            '1' { # Forensic Tools
+                $sub = $menuStructure["Forensic Tools"]
+                Show-SubMenu -Category "Forensic Tools" -SubCategories $sub
+                $subChoice = Read-Host "Select tools (comma-separated or 'A' for all)"
+                if ($subChoice -eq 'A') {
+                    $tools = Get-SelectedTools -SubCategories $sub -SelectedIndices (1..($sub.Count - 1))
+                    Install-Tools -Tools $tools -Category "Forensic Tools"
+                }
+                elseif ($subChoice -eq '0') {
+                    # Do nothing, return to main menu
+                }
+                else {
+                    $selectedIndices = $subChoice.Split(',') | ForEach-Object { [int]::Parse($_.Trim()) }
+                    $tools = Get-SelectedTools -SubCategories $sub -SelectedIndices $selectedIndices
+                    Install-Tools -Tools $tools -Category "Forensic Tools"
+                }
+            }
+            '2' { # Hacking Tools
+                $sub = $menuStructure["Hacking Tools"]
+                Show-SubMenu -Category "
