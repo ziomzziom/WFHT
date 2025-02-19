@@ -1,0 +1,21 @@
+# System files
+Thumbs.db
+.DS_Store
+
+# Logs and databases
+*.log
+*.tmp
+*.etl
+
+# Chocolatey files
+chocolatey/
+packages/
+
+# Virtual machine files
+*.vdi
+*.vmdk
+*.vhd
+
+# IDE configurations
+.vscode/
+.idea/
