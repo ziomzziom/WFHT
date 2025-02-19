@@ -5,8 +5,6 @@
 
 Transform Windows into a powerful forensic analysis and penetration testing workstation with infinite capabilities faster!
 
----
-
 ## 🚀 Quick Start
 
 ### Prerequisites
