@@ -17,12 +17,11 @@ Transform Windows into a powerful forensic analysis and penetration testing work
 
 ### Installation
 
-```powershell
 # Run in an elevated PowerShell window
+```
 Set-ExecutionPolicy RemoteSigned -Scope Process -Force
 irm https://raw.githubusercontent.com/yourusername/WFHT/main/scripts/WFHT-Core-Setup.ps1 | iex
-
----
+```
 
 ## 🛠️ Tool Categories
 
