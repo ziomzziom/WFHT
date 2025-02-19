@@ -7,12 +7,29 @@ if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
     exit
 }
 
-# Tool list (update with your actual tools)
+# Updated Verify-ToolAvailability.ps1 with correct packages
 $toolMatrix = @{
-    "Forensic" = @("autopsy", "ftkimager", "wireshark", "volatility3")
-    "Hacking"  = @("nmap", "metasploit-framework", "sqlmap", "hashcat")
-    "System"   = @("sysinternals", "7zip", "python3", "git")
+    "Forensic" = @(
+        "autopsy-linux",  # Alternative for Autopsy (Linux/WSL)
+        "ftkimager",      # Requires manual download from Exterro
+        "wireshark",      # Verified package
+        "volatility"      # Volatility 2.6 (Volatility3 via pip)
+    )
+    "Hacking"  = @(
+        "nmap",           # Verified
+        "metasploit",     # Correct package name
+        "sqlmap",         # Verified
+        "hashcat"         # Verified
+    )
+    "System"   = @(
+        "sysinternals",   # Verified
+        "7zip",           # Verified
+        "python",         # Python 3.x
+        "git"             # Verified
+    )
 }
+
+# Rerun the validation script after updating
 
 $available = @()
 $missing = @()
