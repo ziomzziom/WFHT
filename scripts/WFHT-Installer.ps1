@@ -70,6 +70,7 @@ function Show-SubMenu {
         Write-Host "[$($i+1)] $key (${size})"
     }
     
+    Write-Host "[A] Install ALL $Category Tools"
     Write-Host "[0] Back to Main Menu`n"
 }
 
@@ -140,26 +141,53 @@ try {
             '1' { # Forensic Tools
                 $sub = $menuStructure["Forensic Tools"]
                 Show-SubMenu -Category "Forensic Tools" -SubCategories $sub
-                $subChoice = Read-Host "Select tools (comma-separated)"
-                $selectedIndices = $subChoice.Split(',') | ForEach-Object { [int]::Parse($_.Trim()) }
-                $tools = Get-SelectedTools -SubCategories $sub -SelectedIndices $selectedIndices
-                Install-Tools -Tools $tools -Category "Forensic Tools"
+                $subChoice = Read-Host "Select tools (comma-separated or 'A' for all)"
+                if ($subChoice -eq 'A') {
+                    $tools = Get-SelectedTools -SubCategories $sub -SelectedIndices (1..($sub.Count - 1))
+                    Install-Tools -Tools $tools -Category "Forensic Tools"
+                }
+                elseif ($subChoice -eq '0') {
+                    # Do nothing, return to main menu
+                }
+                else {
+                    $selectedIndices = $subChoice.Split(',') | ForEach-Object { [int]::Parse($_.Trim()) }
+                    $tools = Get-SelectedTools -SubCategories $sub -SelectedIndices $selectedIndices
+                    Install-Tools -Tools $tools -Category "Forensic Tools"
+                }
             }
             '2' { # Hacking Tools
                 $sub = $menuStructure["Hacking Tools"]
                 Show-SubMenu -Category "Hacking Tools" -SubCategories $sub
-                $subChoice = Read-Host "Select tools (comma-separated)"
-                $selectedIndices = $subChoice.Split(',') | ForEach-Object { [int]::Parse($_.Trim()) }
-                $tools = Get-SelectedTools -SubCategories $sub -SelectedIndices $selectedIndices
-                Install-Tools -Tools $tools -Category "Hacking Tools"
+                $subChoice = Read-Host "Select tools (comma-separated or 'A' for all)"
+                if ($subChoice -eq 'A') {
+                    $tools = Get-SelectedTools -SubCategories $sub -SelectedIndices (1..($sub.Count - 1))
+                    Install-Tools -Tools $tools -Category "Hacking Tools"
+                }
+                elseif ($subChoice -eq '0') {
+                    # Do nothing, return to main menu
+                }
+                else {
+                    $selectedIndices = $subChoice.Split(',') | ForEach-Object { [int]::Parse($_.Trim()) }
+                    $tools = Get-SelectedTools -SubCategories $sub -SelectedIndices $selectedIndices
+                    Install-Tools -Tools $tools -Category "Hacking Tools"
+                }
             }
             '3' { # System Tools
                 $sub = $menuStructure["System Tools"]
                 Show-SubMenu -Category "System Tools" -SubCategories $sub
-                $subChoice = Read-Host "Select tools (comma-separated)"
-                $selectedIndices = $subChoice.Split(',') | ForEach-Object { [int]::Parse($_.Trim()) }
-                $tools = Get-SelectedTools -SubCategories $sub -SelectedIndices $selectedIndices
-                Install-Tools -Tools $tools -Category "System Tools"
+                $subChoice = Read-Host "Select tools (comma-separated or 'A' for all)"
+                if ($subChoice -eq 'A') {
+                    $tools = Get-SelectedTools -SubCategories $sub -SelectedIndices (1..($sub.Count - 1))
+                    Install-Tools -Tools $tools -Category "System Tools"
+                }
+                elseif ($subChoice -eq '0') {
+                    # Do nothing, return to main menu
+                }
+                else {
+                    $selectedIndices = $subChoice.Split(',') | ForEach-Object { [int]::Parse($_.Trim()) }
+                    $tools = Get-SelectedTools -SubCategories $sub -SelectedIndices $selectedIndices
+                    Install-Tools -Tools $tools -Category "System Tools"
+                }
             }
             '4' { # Install ALL
                 Enable-WindowsFeatures
