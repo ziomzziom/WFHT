@@ -18,10 +18,10 @@ $menuStructure = @{
     "Hacking Tools" = @{
         "1. Reconnaissance"      = @("nmap", "maltego", "theharvester")
         "2. Exploitation"        = @("metasploit-framework", "sqlmap")
-        "3. Post-Exploitation"   = @("chocolatey", "chocolatey")  # Placeholder for manual tools
+        "3. Post-Exploitation"   = @("mimikatz", "bloodhound", "powersploit")
         "4. Password Cracking"   = @("hashcat", "john", "hydra")
         "5. Web App Testing"     = @("burp-suite", "owasp-zap")
-        "Size"                   = @(1.9GB, 5GB, 0GB, 2.8GB, 4GB)
+        "Size"                   = @(1.9GB, 5GB, 350MB, 2.8GB, 4GB)
     }
     
     "System Tools" = @{
@@ -98,10 +98,6 @@ function Install-Tools {
     )
     Write-Host "`nInstalling $Category..." -ForegroundColor Cyan
     foreach ($tool in $Tools) {
-        if ($tool -eq "chocolatey") {
-            # Skip placeholder tools
-            continue
-        }
         Write-Host "  - Installing $tool" -ForegroundColor DarkGray
         try {
             choco install $tool -y --no-progress
@@ -110,29 +106,6 @@ function Install-Tools {
             Write-Host "    [!] Failed to install $tool" -ForegroundColor Red
         }
     }
-    
-    # Handle manual tools
-    if ($Category -eq "Post-Exploitation") {
-        Install-ManualTools -Category $Category
-    }
-}
-
-function Install-ManualTools {
-    param(
-        [string]$Category
-    )
-    Write-Host "`nManual Installation Required for $Category Tools:" -ForegroundColor Yellow
-    Write-Host "-----------------------------------------------"
-    
-    switch ($Category) {
-        "Post-Exploitation" {
-            Write-Host "1. Mimikatz: Download from https://github.com/gentilkiwi/mimikatz"
-            Write-Host "2. BloodHound: Download from https://github.com/BloodHoundAD/BloodHound"
-            Write-Host "3. PowerSploit: Download from https://github.com/PowerShellMafia/PowerSploit"
-        }
-    }
-    
-    Write-Host "`nFollow the instructions in the respective repositories to install these tools.`n"
 }
 
 function Enable-WindowsFeatures {
@@ -184,4 +157,60 @@ try {
             }
             '2' { # Hacking Tools
                 $sub = $menuStructure["Hacking Tools"]
-                Show-SubMenu -Category "
+                Show-SubMenu -Category "Hacking Tools" -SubCategories $sub
+                $subChoice = Read-Host "Select tools (comma-separated or 'A' for all)"
+                if ($subChoice -eq 'A') {
+                    $tools = Get-SelectedTools -SubCategories $sub -SelectedIndices (1..($sub.Count - 1))
+                    Install-Tools -Tools $tools -Category "Hacking Tools"
+                }
+                elseif ($subChoice -eq '0') {
+                    # Do nothing, return to main menu
+                }
+                else {
+                    $selectedIndices = $subChoice.Split(',') | ForEach-Object { [int]::Parse($_.Trim()) }
+                    $tools = Get-SelectedTools -SubCategories $sub -SelectedIndices $selectedIndices
+                    Install-Tools -Tools $tools -Category "Hacking Tools"
+                }
+            }
+            '3' { # System Tools
+                $sub = $menuStructure["System Tools"]
+                Show-SubMenu -Category "System Tools" -SubCategories $sub
+                $subChoice = Read-Host "Select tools (comma-separated or 'A' for all)"
+                if ($subChoice -eq 'A') {
+                    $tools = Get-SelectedTools -SubCategories $sub -SelectedIndices (1..($sub.Count - 1))
+                    Install-Tools -Tools $tools -Category "System Tools"
+                }
+                elseif ($subChoice -eq '0') {
+                    # Do nothing, return to main menu
+                }
+                else {
+                    $selectedIndices = $subChoice.Split(',') | ForEach-Object { [int]::Parse($_.Trim()) }
+                    $tools = Get-SelectedTools -SubCategories $sub -SelectedIndices $selectedIndices
+                    Install-Tools -Tools $tools -Category "System Tools"
+                }
+            }
+            '4' { # Install ALL
+                Enable-WindowsFeatures
+                foreach ($category in $menuStructure.Keys) {
+                    $sub = $menuStructure[$category]
+                    $tools = Get-SelectedTools -SubCategories $sub -SelectedIndices (1..($sub.Count - 1))
+                    Install-Tools -Tools $tools -Category $category
+                }
+            }
+            '5' { # Space Estimate
+                # ... (space calculation logic)
+            }
+            '0' { $exit = $true }
+            default { Write-Host "Invalid selection!" -ForegroundColor Red }
+        }
+        
+        if (-not $exit) {
+            Read-Host "`nPress Enter to continue..."
+        }
+    }
+}
+finally {
+    Write-Host "`nOperation completed. Recommended:" -ForegroundColor Cyan
+    Write-Host "- Reboot system for feature changes"
+    Write-Host "- Run 'wsl --update' for Linux components`n"
+}
