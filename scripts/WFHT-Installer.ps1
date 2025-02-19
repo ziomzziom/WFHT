@@ -42,14 +42,14 @@ $requiredFeatures = @(
 #region Functions
 function Show-MainMenu {
     Clear-Host
-    Write-Host "`n`t🔍⚔️ Windows Forensic & Hacking Toolkit Installer`n" -ForegroundColor Magenta
-    Write-Host "`t=== Main Menu ==="
-    Write-Host "`t[1] Install Forensic Tools"
-    Write-Host "`t[2] Install Hacking Tools"
-    Write-Host "`t[3] Install System Tools"
-    Write-Host "`t[4] Install ALL Tools"
-    Write-Host "`t[5] Estimate Space Requirements"
-    Write-Host "`t[0] Exit`n"
+    Write-Host "`nWindows Forensic & Hacking Toolkit Installer`n" -ForegroundColor Magenta
+    Write-Host "=== Main Menu ==="
+    Write-Host "[1] Install Forensic Tools"
+    Write-Host "[2] Install Hacking Tools"
+    Write-Host "[3] Install System Tools"
+    Write-Host "[4] Install ALL Tools"
+    Write-Host "[5] Estimate Space Requirements"
+    Write-Host "[0] Exit`n"
 }
 
 function Show-SubMenu {
@@ -58,26 +58,29 @@ function Show-SubMenu {
         [hashtable]$SubCategories
     )
     Clear-Host
-    Write-Host "`n`t=== $Category ===" -ForegroundColor Yellow
+    Write-Host "`n=== $Category ===" -ForegroundColor Yellow
     $sizeIndex = $SubCategories["Size"].Count
     for ($i = 0; $i -lt ($SubCategories.Count - 1); $i++) {
-        if ($i -lt $sizeIndex) {
+        $key = $SubCategories.Keys[$i]
+        if ($key -ne "Size") {
             $size = "{0:N1}GB" -f ($SubCategories["Size"][$i]/1GB)
-            Write-Host "`t[$($i+1)] $($SubCategories.Keys[$i]) (${size})"
+            Write-Host "[$($i+1)] $key (${size})"
         }
     }
-    Write-Host "`t[0] Back to Main Menu`n"
+    Write-Host "[0] Back to Main Menu`n"
 }
 
 function Get-SelectedTools {
     param(
-        [hashtable]$SubCategories
+        [hashtable]$SubCategories,
+        [array]$SelectedIndices
     )
     $selected = @()
     $sizeIndex = $SubCategories["Size"].Count
     for ($i = 0; $i -lt ($SubCategories.Count - 1); $i++) {
-        if ($i -lt $sizeIndex) {
-            $selected += $SubCategories[$i]
+        $key = $SubCategories.Keys[$i]
+        if ($key -ne "Size" -and ($i+1) -in $SelectedIndices) {
+            $selected += $SubCategories[$key]
         }
     }
     $selected
@@ -90,7 +93,7 @@ function Install-Tools {
     )
     Write-Host "`nInstalling $Category..." -ForegroundColor Cyan
     foreach ($tool in $Tools) {
-        Write-Host "  - $tool" -ForegroundColor DarkGray
+        Write-Host "  - Installing $tool" -ForegroundColor DarkGray
         try {
             choco install $tool -y --no-progress
         }
@@ -127,37 +130,38 @@ try {
     $exit = $false
     while (-not $exit) {
         Show-MainMenu
-        $choice = Read-Host "`tEnter your choice"
+        $choice = Read-Host "Enter your choice"
         
         switch ($choice) {
             '1' { # Forensic Tools
                 $sub = $menuStructure["Forensic Tools"]
                 Show-SubMenu -Category "Forensic Tools" -SubCategories $sub
-                $subChoice = Read-Host "`tSelect tools (comma-separated)"
-                $selected = $subChoice.Split(',') | ForEach-Object { $_.Trim() }
-                $tools = Get-SelectedTools -SubCategories $sub
+                $subChoice = Read-Host "Select tools (comma-separated)"
+                $selectedIndices = $subChoice.Split(',') | ForEach-Object { [int]::Parse($_.Trim()) }
+                $tools = Get-SelectedTools -SubCategories $sub -SelectedIndices $selectedIndices
                 Install-Tools -Tools $tools -Category "Forensic Tools"
             }
             '2' { # Hacking Tools
                 $sub = $menuStructure["Hacking Tools"]
                 Show-SubMenu -Category "Hacking Tools" -SubCategories $sub
-                $subChoice = Read-Host "`tSelect tools (comma-separated)"
-                $selected = $subChoice.Split(',') | ForEach-Object { $_.Trim() }
-                $tools = Get-SelectedTools -SubCategories $sub
+                $subChoice = Read-Host "Select tools (comma-separated)"
+                $selectedIndices = $subChoice.Split(',') | ForEach-Object { [int]::Parse($_.Trim()) }
+                $tools = Get-SelectedTools -SubCategories $sub -SelectedIndices $selectedIndices
                 Install-Tools -Tools $tools -Category "Hacking Tools"
             }
             '3' { # System Tools
                 $sub = $menuStructure["System Tools"]
                 Show-SubMenu -Category "System Tools" -SubCategories $sub
-                $subChoice = Read-Host "`tSelect tools (comma-separated)"
-                $selected = $subChoice.Split(',') | ForEach-Object { $_.Trim() }
-                $tools = Get-SelectedTools -SubCategories $sub
+                $subChoice = Read-Host "Select tools (comma-separated)"
+                $selectedIndices = $subChoice.Split(',') | ForEach-Object { [int]::Parse($_.Trim()) }
+                $tools = Get-SelectedTools -SubCategories $sub -SelectedIndices $selectedIndices
                 Install-Tools -Tools $tools -Category "System Tools"
             }
             '4' { # Install ALL
                 Enable-WindowsFeatures
                 foreach ($category in $menuStructure.Keys) {
-                    $tools = Get-SelectedTools -SubCategories $menuStructure[$category]
+                    $sub = $menuStructure[$category]
+                    $tools = Get-SelectedTools -SubCategories $sub -SelectedIndices (1..($sub.Count - 1))
                     Install-Tools -Tools $tools -Category $category
                 }
             }
@@ -165,7 +169,7 @@ try {
                 # ... (space calculation logic)
             }
             '0' { $exit = $true }
-            default { Write-Host "`tInvalid selection!" -ForegroundColor Red }
+            default { Write-Host "Invalid selection!" -ForegroundColor Red }
         }
         
         if (-not $exit) {
