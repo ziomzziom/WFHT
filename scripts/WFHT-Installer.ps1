@@ -7,7 +7,7 @@ param(
 
 #region Configuration
 $menuStructure = @{
-    "🔍 Forensic Tools" = @{
+    "Forensic Tools" = @{
         "1. Disk Analysis"       = @("autopsy", "ftkimager", "ericzimmertools")
         "2. Memory Analysis"     = @("volatility3", "belkasoft-ram-capturer")
         "3. Network Forensics"   = @("wireshark", "networkminer", "tshark")
@@ -16,7 +16,7 @@ $menuStructure = @{
         "Size"                   = @(4.5GB, 1.5GB, 1GB, 2.5GB, 600MB)
     }
     
-    "⚔️ Hacking Tools" = @{
+    "Hacking Tools" = @{
         "1. Reconnaissance"      = @("nmap", "maltego", "theharvester")
         "2. Exploitation"        = @("metasploit-framework", "sqlmap")
         "3. Post-Exploitation"   = @("mimikatz", "bloodhound", "powersploit")
@@ -25,7 +25,7 @@ $menuStructure = @{
         "Size"                   = @(1.9GB, 5GB, 350MB, 2.8GB, 4GB)
     }
     
-    "⚙️ System Tools" = @{
+    "System Tools" = @{
         "1. Core Utilities"      = @("sysinternals", "7zip", "nirlauncher")
         "2. Development"         = @("python3", "vscode", "ghidra")
         "3. Virtualization"      = @("vmware-workstation-player", "virtualbox", "wsl2")
